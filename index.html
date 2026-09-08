@@ -3,14 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Project Zomboid Skill Tracker</title>
+  <title>Spiffo's Skill Book Checklist</title>
+  
+  <!-- Browser Favicon / Sidebar Icon -->
+  <link rel="icon" type="image/png" href="SpiffoSkipping.png">
+  <link rel="apple-touch-icon" href="SpiffoSkipping.png">
+
   <style>
     :root {
-      --bg-color: #121214;
-      --card-bg: #1a1a1e;
-      --border-color: #2e2e38;
-      --text-main: #e1e1e6;
-      --accent-blue: #82aaff;
+      --bg-color: #141212;
+      --card-bg: #1e1a19;
+      --border-color: #382b26;
+      --text-main: #f0e6df;
+      --spiffo-orange: #e85a1d;
+      --spiffo-orange-hover: #ff6f2c;
       --accent-green: #2e7d32;
       --accent-green-border: #4caf50;
       --accent-red: #c62828;
@@ -41,18 +47,28 @@
       gap: 15px;
     }
 
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .spiffo-icon {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 6px rgba(232, 90, 29, 0.4));
+    }
+
     h1 {
       margin: 0;
       font-size: 1.8rem;
       color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
 
     .subtitle {
       font-size: 0.85rem;
-      color: #888;
+      color: #b0a098;
       margin-top: 4px;
     }
 
@@ -62,7 +78,7 @@
     }
 
     button {
-      background: #2a2a36;
+      background: #2b221f;
       color: var(--text-main);
       border: 1px solid var(--border-color);
       padding: 10px 16px;
@@ -74,18 +90,18 @@
     }
 
     button:hover {
-      background: #383848;
-      border-color: #55556a;
+      background: #3d2f2b;
+      border-color: var(--spiffo-orange);
     }
 
     .btn-save {
-      background: var(--accent-green);
-      border-color: var(--accent-green-border);
+      background: var(--spiffo-orange);
+      border-color: var(--spiffo-orange-hover);
       color: #fff;
     }
 
     .btn-save:hover {
-      background: #388e3c;
+      background: var(--spiffo-orange-hover);
     }
 
     .btn-reset {
@@ -109,11 +125,11 @@
       border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 18px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
 
     .category-title {
-      color: var(--accent-blue);
+      color: var(--spiffo-orange);
       font-size: 1.1rem;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -131,7 +147,7 @@
     }
 
     .skill-row:not(:last-child) {
-      border-bottom: 1px dashed #252530;
+      border-bottom: 1px dashed #2a221f;
     }
 
     .skill-name {
@@ -148,8 +164,8 @@
       width: 28px;
       height: 28px;
       border-radius: 4px;
-      border: 1px solid #444454;
-      background: #25252e;
+      border: 1px solid #42342e;
+      background: #251e1b;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -161,7 +177,7 @@
     }
 
     .box:hover {
-      border-color: #8888aa;
+      border-color: var(--spiffo-orange);
     }
 
     /* State 1: Check */
@@ -184,8 +200,11 @@
   <div class="container">
     <header>
       <div>
-        <h1>🧟 Project Zomboid Skill Tracker</h1>
-        <div class="subtitle">Click boxes to cycle: Blank ➔ Check (✓) ➔ Cross (✗)</div>
+        <div class="header-brand">
+          <img src="https://pzwiki.net/w/images/a/a2/Spiffo_Head.png" alt="Spiffo" class="spiffo-icon">
+          <h1>Spiffo's Skill Tracker</h1>
+        </div>
+        <div class="subtitle">Click boxes: Blank ➔ Read/Owned (✓) ➔ Needed (✗)</div>
       </div>
       <div class="actions">
         <button class="btn-save" onclick="exportToTxt()">💾 Save as TXT</button>
@@ -197,7 +216,6 @@
   </div>
 
   <script>
-    // Skill Dataset
     const skillData = {
       "Combat - Firearms": ["Aiming", "Reloading"],
       "Combat - Melee": ["Axe", "Long Blade", "Long Blunt", "Maintenance", "Short Blade", "Short Blunt", "Spear"],
@@ -207,12 +225,9 @@
       "Survival": ["First Aid", "Fishing", "Foraging", "Tracking", "Trapping"]
     };
 
-    // Store state in memory & localStorage
     let state = JSON.parse(localStorage.getItem('pz_skills_state')) || {};
-
     const gridEl = document.getElementById('skills-grid');
 
-    // Build UI
     function render() {
       gridEl.innerHTML = '';
 
@@ -237,10 +252,9 @@
           const boxesContainer = document.createElement('div');
           boxesContainer.className = 'boxes-container';
 
-          // Create 5 boxes per skill
           for (let i = 0; i < 5; i++) {
             const key = `${category}_${skill}_${i}`;
-            const boxState = state[key] || 0; // 0: empty, 1: check, 2: cross
+            const boxState = state[key] || 0;
 
             const box = document.createElement('div');
             box.className = 'box';
@@ -265,7 +279,6 @@
       }
     }
 
-    // Set UI for box based on numerical state
     function updateBoxUI(el, val) {
       el.className = 'box';
       if (val === 1) {
@@ -279,10 +292,9 @@
       }
     }
 
-    // Export current setup as a clean .txt file
     function exportToTxt() {
-      let output = "PROJECT ZOMBOID SKILLS LIST\n";
-      output += "===========================\n\n";
+      let output = "SPIFFO'S SKILL BOOK CHECKLIST\n";
+      output += "=============================\n\n";
 
       for (const [category, skills] of Object.entries(skillData)) {
         output += `${category}:\n`;
@@ -294,14 +306,12 @@
             else if (val === 2) boxString += "[✗] ";
             else boxString += "[ ] ";
           }
-          // Align skill names with tab spacing
           const paddedSkill = (skill + ":").padEnd(16, " ");
           output += `\t${paddedSkill} ${boxString.trim()}\n`;
         });
         output += "\n";
       }
 
-      // Trigger download
       const blob = new Blob([output], { type: 'text/plain' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -310,16 +320,14 @@
       URL.revokeObjectURL(a.href);
     }
 
-    // Reset button handler
     function resetAll() {
-      if (confirm("Are you sure you want to clear all checkboxes?")) {
+      if (confirm("Clear all checked skill boxes?")) {
         state = {};
         localStorage.removeItem('pz_skills_state');
         render();
       }
     }
 
-    // Initial render
     render();
   </script>
 </body>
