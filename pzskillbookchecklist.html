@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Zomboid Skill Tracker</title>
+  <style>
+    :root {
+      --bg-color: #121214;
+      --card-bg: #1a1a1e;
+      --border-color: #2e2e38;
+      --text-main: #e1e1e6;
+      --accent-blue: #82aaff;
+      --accent-green: #2e7d32;
+      --accent-green-border: #4caf50;
+      --accent-red: #c62828;
+      --accent-red-border: #ef5350;
+    }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      background: #2a2a36;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background: #383848;
+      border-color: #55556a;
+    }
+
+    .btn-save {
+      background: var(--accent-green);
+      border-color: var(--accent-green-border);
+      color: #fff;
+    }
+
+    .btn-save:hover {
+      background: #388e3c;
+    }
+
+    .btn-reset {
+      background: #331515;
+      border-color: #662222;
+      color: #ff9999;
+    }
+
+    .btn-reset:hover {
+      background: #4a1c1c;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+      gap: 20px;
+    }
+
+    .category-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 18px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .category-title {
+      color: var(--accent-blue);
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 0;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .skill-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+    }
+
+    .skill-row:not(:last-child) {
+      border-bottom: 1px dashed #252530;
+    }
+
+    .skill-name {
+      font-size: 0.95rem;
+    }
+
+    .boxes-container {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* Tri-state Box */
+    .box {
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      border: 1px solid #444454;
+      background: #25252e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+
+    .box:hover {
+      border-color: #8888aa;
+    }
+
+    /* State 1: Check */
+    .box.state-check {
+      background: var(--accent-green);
+      border-color: var(--accent-green-border);
+      color: #fff;
+    }
+
+    /* State 2: Cross */
+    .box.state-cross {
+      background: var(--accent-red);
+      border-color: var(--accent-red-border);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div>
+        <h1>🧟 Project Zomboid Skill Tracker</h1>
+        <div class="subtitle">Click boxes to cycle: Blank ➔ Check (✓) ➔ Cross (✗)</div>
+      </div>
+      <div class="actions">
+        <button class="btn-save" onclick="exportToTxt()">💾 Save as TXT</button>
+        <button class="btn-reset" onclick="resetAll()">🔄 Reset All</button>
+      </div>
+    </header>
+
+    <div id="skills-grid" class="grid"></div>
+  </div>
+
+  <script>
+    // Skill Dataset
+    const skillData = {
+      "Combat - Firearms": ["Aiming", "Reloading"],
+      "Combat - Melee": ["Axe", "Long Blade", "Long Blunt", "Maintenance", "Short Blade", "Short Blunt", "Spear"],
+      "Crafting": ["Blacksmithing", "Carpentry", "Carving", "Cooking", "Electrical", "Glassmaking", "Knapping", "Masonry", "Mechanics", "Pottery", "Tailoring", "Welding"],
+      "Farming": ["Agriculture", "Animal Care", "Butchering"],
+      "Physical": ["Fitness", "Lightfooted", "Nimble", "Running", "Sneaking", "Strength"],
+      "Survival": ["First Aid", "Fishing", "Foraging", "Tracking", "Trapping"]
+    };
+
+    // Store state in memory & localStorage
+    let state = JSON.parse(localStorage.getItem('pz_skills_state')) || {};
+
+    const gridEl = document.getElementById('skills-grid');
+
+    // Build UI
+    function render() {
+      gridEl.innerHTML = '';
+
+      for (const [category, skills] of Object.entries(skillData)) {
+        const card = document.createElement('div');
+        card.className = 'category-card';
+
+        const title = document.createElement('h2');
+        title.className = 'category-title';
+        title.textContent = category;
+        card.appendChild(title);
+
+        skills.forEach(skill => {
+          const row = document.createElement('div');
+          row.className = 'skill-row';
+
+          const name = document.createElement('span');
+          name.className = 'skill-name';
+          name.textContent = skill;
+          row.appendChild(name);
+
+          const boxesContainer = document.createElement('div');
+          boxesContainer.className = 'boxes-container';
+
+          // Create 5 boxes per skill
+          for (let i = 0; i < 5; i++) {
+            const key = `${category}_${skill}_${i}`;
+            const boxState = state[key] || 0; // 0: empty, 1: check, 2: cross
+
+            const box = document.createElement('div');
+            box.className = 'box';
+            
+            updateBoxUI(box, boxState);
+
+            box.addEventListener('click', () => {
+              const nextState = ((state[key] || 0) + 1) % 3;
+              state[key] = nextState;
+              localStorage.setItem('pz_skills_state', JSON.stringify(state));
+              updateBoxUI(box, nextState);
+            });
+
+            boxesContainer.appendChild(box);
+          }
+
+          row.appendChild(boxesContainer);
+          card.appendChild(row);
+        });
+
+        gridEl.appendChild(card);
+      }
+    }
+
+    // Set UI for box based on numerical state
+    function updateBoxUI(el, val) {
+      el.className = 'box';
+      if (val === 1) {
+        el.classList.add('state-check');
+        el.textContent = '✓';
+      } else if (val === 2) {
+        el.classList.add('state-cross');
+        el.textContent = '✗';
+      } else {
+        el.textContent = '';
+      }
+    }
+
+    // Export current setup as a clean .txt file
+    function exportToTxt() {
+      let output = "PROJECT ZOMBOID SKILLS LIST\n";
+      output += "===========================\n\n";
+
+      for (const [category, skills] of Object.entries(skillData)) {
+        output += `${category}:\n`;
+        skills.forEach(skill => {
+          let boxString = "";
+          for (let i = 0; i < 5; i++) {
+            const val = state[`${category}_${skill}_${i}`] || 0;
+            if (val === 1) boxString += "[✓] ";
+            else if (val === 2) boxString += "[✗] ";
+            else boxString += "[ ] ";
+          }
+          // Align skill names with tab spacing
+          const paddedSkill = (skill + ":").padEnd(16, " ");
+          output += `\t${paddedSkill} ${boxString.trim()}\n`;
+        });
+        output += "\n";
+      }
+
+      // Trigger download
+      const blob = new Blob([output], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'pz_skills.txt';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    // Reset button handler
+    function resetAll() {
+      if (confirm("Are you sure you want to clear all checkboxes?")) {
+        state = {};
+        localStorage.removeItem('pz_skills_state');
+        render();
+      }
+    }
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
