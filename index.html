@@ -150,6 +150,32 @@
       border-bottom: 1px dashed #2a221f;
     }
 
+    /* Skills without books style */
+    .skill-row.no-book-row {
+      opacity: 0.45;
+    }
+
+    .skill-row.no-book-row .skill-name {
+      text-decoration: line-through;
+      color: #a09088;
+    }
+
+    .skill-row.no-book-row .boxes-container {
+      position: relative;
+    }
+
+    .skill-row.no-book-row .boxes-container::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -2px;
+      right: -2px;
+      height: 2px;
+      background: #a09088;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
     .skill-name {
       font-size: 0.95rem;
     }
@@ -225,6 +251,9 @@
       "Survival": ["First Aid", "Fishing", "Foraging", "Tracking", "Trapping"]
     };
 
+    // Melee weapons that do not have skill books in base PZ
+    const noBookMelee = ["Axe", "Long Blade", "Short Blade", "Short Blunt", "Spear"];
+
     let state = JSON.parse(localStorage.getItem('pz_skills_state')) || {};
     const gridEl = document.getElementById('skills-grid');
 
@@ -243,6 +272,10 @@
         skills.forEach(skill => {
           const row = document.createElement('div');
           row.className = 'skill-row';
+
+          if (category === "Combat - Melee" && noBookMelee.includes(skill)) {
+            row.classList.add('no-book-row');
+          }
 
           const name = document.createElement('span');
           name.className = 'skill-name';
